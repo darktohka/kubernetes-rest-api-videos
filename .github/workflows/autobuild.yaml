@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Get branch
+        run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -18,4 +20,5 @@ jobs:
         run: |
           docker buildx build --push \
             --tag "${{ secrets.DOCKER_TAG }}" \
+            --tag "${{ secrets.DOCKER_TAG }}:$BRANCH" \
             --platform linux/amd64 .
