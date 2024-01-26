@@ -62,7 +62,7 @@ export const protectedPopulateVideos = async (
 };
 
 const options = {
-  timeout: 30000,
+  timeout: 3000,
   errorThresholdPercentage: 50,
   resetTimeout: 10000,
 };
