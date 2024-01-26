@@ -55,15 +55,7 @@ app.post(
 
     try {
       const savedVideo = await video.save();
-
-      try {
-        const populatedVideo = await populateVideos([savedVideo])[0];
-
-        res.json(populatedVideo);
-      } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: "Circuit breaker engaged" });
-      }
+      res.json(savedVideo);
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
