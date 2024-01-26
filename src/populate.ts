@@ -2,10 +2,11 @@ import { PopulatedVideo, Video } from "./mongodb/video.js";
 import { getValues } from "./redis.js";
 import { User } from "./user.js";
 import { requestPopulateUsers } from "./kafka.js";
+import { CircuitBreaker } from "opossum";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const populateVideos = async (
+export const protectedPopulateVideos = async (
   videos: Video[]
 ): Promise<PopulatedVideo[]> => {
   const userIds = [...new Set(videos.map((video) => video.owner_user_id))];
@@ -56,3 +57,14 @@ export const populateVideos = async (
 
   return populatedVideos;
 };
+
+const options = {
+  timeout: 3000,
+  errorThresholdPercentage: 50,
+  resetTimeout: 10000,
+};
+const breaker = new CircuitBreaker(protectedPopulateVideos, options);
+
+export const populateVideos = async (
+  videos: Video[]
+): Promise<PopulatedVideo[]> => breaker.fire(videos);
