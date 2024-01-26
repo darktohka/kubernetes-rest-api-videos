@@ -43,20 +43,19 @@ let jwtSecret: Uint8Array | null = null;
 
 const jwtConsumer = kafka.consumer({ groupId: `jwt-group-${uuidv4()}` });
 
+const onJwtRotated = async (data: JwtRotatedPayload) => {
+  console.log("Rotated JWT secret:", data.jwt);
+  jwtSecret = new TextEncoder().encode(data.jwt);
+};
+
 jwtConsumer.connect().then(() => {
   jwtConsumer
     .subscribe({ topic: "jwt-rotated", fromBeginning: true })
     .then(() => {
       jwtConsumer.run({
-        eachMessage: async ({
-          topic,
-          partition,
-          message,
-        }: EachMessagePayload) => {
+        eachMessage: async ({ message }: EachMessagePayload) => {
           const data = decode(message.value) as JwtRotatedPayload;
-          console.log("data", data);
-          var enc = new TextEncoder();
-          jwtSecret = enc.encode(data.jwt);
+          onJwtRotated(data);
         },
       });
     });
@@ -74,6 +73,10 @@ const getBearerToken = (req) => {
 };
 
 const decodeJWT = async (req) => {
+  if (!jwtSecret) {
+    throw new Error("JWT secret not ready");
+  }
+
   const token = getBearerToken(req);
   const { payload } = await jwtVerify(token, jwtSecret);
 
@@ -115,7 +118,13 @@ app.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const user = await decodeJWT(req);
+    let user: JwtUser;
+
+    try {
+      user = await decodeJWT(req);
+    } catch (error) {
+      return res.status(401).json({ errors: [{ msg: error.message }] });
+    }
 
     const data = {
       title: req.body.title,
