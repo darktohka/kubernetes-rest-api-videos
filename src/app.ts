@@ -4,6 +4,7 @@ import { body, validationResult } from "express-validator";
 import { EachMessagePayload, Kafka, KafkaConfig } from "kafkajs";
 import { encode, decode } from "@msgpack/msgpack";
 import { KeyLike, jwtVerify } from "jose";
+import { v4 as uuidv4 } from "uuid";
 
 interface JwtRotatedPayload {
   jwt: string;
@@ -40,7 +41,7 @@ const kafka = new Kafka(kafkaConfig);
 
 let jwtSecret: Uint8Array | null = null;
 
-const jwtConsumer = kafka.consumer({ groupId: null });
+const jwtConsumer = kafka.consumer({ groupId: `jwt-group-${uuidv4()}` });
 
 jwtConsumer.connect().then(() => {
   jwtConsumer
