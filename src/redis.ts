@@ -37,7 +37,7 @@ export const getClient = () => {
   return createClient({
     url: "redis://159.69.24.54:6379",
     socket: {
-      connectTimeout: 10000,
+      connectTimeout: 3000,
     },
   }).connect();
 };

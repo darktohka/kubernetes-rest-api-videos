@@ -20,6 +20,8 @@ export const protectedPopulateVideos = async (
       (userId) => !currentUserIds.includes(userId)
     );
 
+    console.log("Getting values...");
+
     const cachedUsers = await getValues<User>(missingUserIds);
 
     if (!populated) {
@@ -60,7 +62,7 @@ export const protectedPopulateVideos = async (
 };
 
 const options = {
-  timeout: 3000,
+  timeout: 30000,
   errorThresholdPercentage: 50,
   resetTimeout: 10000,
 };
