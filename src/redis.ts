@@ -35,7 +35,7 @@ export const setValues = async <T>(values: Record<string, T>) => {
 
 export const getClient = () => {
   return createClient({
-    url: "redis://159.69.24.54:6379",
+    url: "redis://redis-service:6379",
     socket: {
       connectTimeout: 3000,
     },
