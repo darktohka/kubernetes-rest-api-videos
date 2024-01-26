@@ -4,6 +4,7 @@ import { decode, encode } from "@msgpack/msgpack";
 let client = null;
 
 export const getValues = async <T>(keys: string[]): Promise<T[]> => {
+  console.log("Getting values:", keys);
   const result = await (
     await getClient()
   ).mGet(commandOptions({ returnBuffers: true }), keys);
@@ -32,8 +33,8 @@ export const setValues = async <T>(values: Record<string, T>) => {
   return result;
 };
 
-export const getClient = async () => {
-  return await createClient({
+export const getClient = () => {
+  return createClient({
     url: "redis://159.69.24.54:6379",
     socket: {
       connectTimeout: 10000,
