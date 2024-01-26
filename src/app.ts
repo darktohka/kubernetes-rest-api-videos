@@ -3,7 +3,7 @@ import { body, validationResult } from "express-validator";
 import { JwtUser, decodeJWT } from "./jwt.js";
 import { setupMongo } from "./mongodb/connection.js";
 import { setupKafka } from "./kafka.js";
-import { VideoModel } from "./mongodb/video.js";
+import { Video, VideoModel } from "./mongodb/video.js";
 import { populateVideos } from "./populate.js";
 
 const app = express();
@@ -12,7 +12,21 @@ const port = 5001;
 app.use(express.json());
 
 app.get("/api/videos", async (req: Request, res: Response) => {
-  const videos = await VideoModel.find();
+  let videos: Video[];
+
+  try {
+    videos = await VideoModel.find();
+  } catch (error) {
+    res.status(500).json({ error: "Could not contact database" });
+    return;
+  }
+
+  const populate = req.query.populate === "true";
+
+  if (!populate) {
+    res.json(videos);
+    return;
+  }
 
   try {
     const populatedVideos = await populateVideos(videos);

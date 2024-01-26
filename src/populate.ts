@@ -36,8 +36,6 @@ export const protectedPopulateVideos = async (
     }
 
     cachedUsers.forEach((user) => {
-      console.log("got:", user.id);
-      console.log("got user:", user);
       userMap[user.id] = user;
     });
 
@@ -50,12 +48,13 @@ export const protectedPopulateVideos = async (
     }
   }
 
-  console.log("population complete.");
+  console.log("Population complete.");
 
   const populatedVideos: PopulatedVideo[] = videos.map((video) => ({
     owner: userMap[video.owner_user_id],
     title: video.title,
     description: video.description,
+    id: video._id?.toString(),
   }));
 
   return populatedVideos;
