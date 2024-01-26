@@ -2,7 +2,8 @@ import { PopulatedVideo, Video } from "./mongodb/video.js";
 import { getValues } from "./redis.js";
 import { User } from "./user.js";
 import { requestPopulateUsers } from "./kafka.js";
-import { CircuitBreaker } from "opossum";
+
+const CircuitBreaker = require("opossum");
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
