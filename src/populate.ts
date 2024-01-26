@@ -3,7 +3,7 @@ import { getValues } from "./redis.js";
 import { User } from "./user.js";
 import { requestPopulateUsers } from "./kafka.js";
 
-const CircuitBreaker = require("opossum");
+import CircuitBreaker from "opossum";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
