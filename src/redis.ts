@@ -22,7 +22,7 @@ export const getValues = async <T>(keys: string[]): Promise<T[]> => {
 export const setValues = async <T>(values: Record<string, T>) => {
   const packedValues: Record<string, Buffer> = Object.entries(values).reduce(
     (acc, cur) => {
-      acc[cur[0]] = encode(cur[1]);
+      acc[cur[0]] = Buffer.from(encode(cur[1]));
       return acc;
     },
     {}
