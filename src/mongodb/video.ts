@@ -1,8 +1,16 @@
 import mongoose, { Document } from "mongoose";
+import { User } from "../user";
 
-export interface Video extends Document {
+export interface BaseVideo {
   title: string;
   description: string;
+}
+
+export interface PopulatedVideo extends BaseVideo {
+  owner: User;
+}
+
+export interface Video extends Document, BaseVideo {
   owner_user_id: string;
 }
 

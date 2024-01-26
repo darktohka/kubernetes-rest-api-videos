@@ -5,10 +5,12 @@ import {
   Kafka,
   KafkaConfig,
 } from "kafkajs";
-import { decode } from "@msgpack/msgpack";
+import { decode, encode } from "@msgpack/msgpack";
 import { v4 as uuidv4 } from "uuid";
 import { setJwtSecret } from "./jwt.js";
 import { VideoModel } from "./mongodb/video.js";
+import { User } from "./user.js";
+import { setValues } from "./redis.js";
 
 interface JwtRotatedPayload {
   jwt: string;
@@ -16,6 +18,14 @@ interface JwtRotatedPayload {
 
 interface UserDeletedPayload {
   id: string;
+}
+
+interface PopulateUsersPayload {
+  userIds: string[];
+}
+
+interface UsersPopulatedPayload {
+  users: User[];
 }
 
 const kafkaConfig: KafkaConfig = {
@@ -28,7 +38,11 @@ const kafkaConfig: KafkaConfig = {
 };
 const kafka = new Kafka(kafkaConfig);
 
+const producer = kafka.producer();
 const jwtConsumer = kafka.consumer({ groupId: `jwt-group-${uuidv4()}` });
+const UsersPopulatedConsumer = kafka.consumer({
+  groupId: "users-populated-consumer",
+});
 const userDeletedConsumer = kafka.consumer({
   groupId: "user-deleted-group",
 });
@@ -43,6 +57,17 @@ const onUserDeleted = async (data: UserDeletedPayload) => {
 
   const result = await VideoModel.deleteMany({ owner_user_id: id });
   console.log(`User deleted. Removed ${result.deletedCount} videos`);
+};
+
+const onUsersPopulated = async (data: UsersPopulatedPayload) => {
+  const { users } = data;
+  const userRecords: Record<string, User> = users.reduce((acc, cur) => {
+    acc[cur.id] = cur;
+    return acc;
+  }, {});
+
+  console.log("Populating user records:", userRecords);
+  await setValues(userRecords);
 };
 
 const setupListener = <T>(
@@ -62,18 +87,33 @@ const setupListener = <T>(
   });
 };
 
-const setupKafka = () => {
+export const setupKafka = () => {
   setupListener<JwtRotatedPayload>(
     jwtConsumer,
     { topics: ["jwt-rotated"], fromBeginning: true },
     onJwtRotated
   );
 
-  return setupListener<UserDeletedPayload>(
+  setupListener<UserDeletedPayload>(
     userDeletedConsumer,
     { topics: ["user-deleted"] },
     onUserDeleted
   );
+
+  setupListener<UsersPopulatedPayload>(
+    UsersPopulatedConsumer,
+    { topics: ["users-populated"] },
+    onUsersPopulated
+  );
+
+  return producer.connect();
 };
 
-export { setupKafka };
+export const requestPopulateUsers = (payload: PopulateUsersPayload) => {
+  const producer = kafka.producer();
+
+  return producer.send({
+    topic: "populate-users",
+    messages: [{ value: Buffer.from(encode(payload)) }],
+  });
+};

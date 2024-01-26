@@ -9,9 +9,11 @@ export const getValues = async <T>(keys: string[]): Promise<T[]> => {
     keys
   );
 
-  const unpackedValues = result.map((value) => {
-    return decode(value) as T;
-  });
+  const unpackedValues = result
+    .filter((value) => value != null)
+    .map((value) => {
+      return decode(value) as T;
+    });
 
   console.log("Unpacked values:", unpackedValues);
   return unpackedValues;

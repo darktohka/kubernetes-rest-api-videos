@@ -5,6 +5,7 @@ import { setupMongo } from "./mongodb/connection.js";
 import { setupKafka } from "./kafka.js";
 import { setupRedis } from "./redis.js";
 import { VideoModel } from "./mongodb/video.js";
+import { populateVideos } from "./populate.js";
 
 const app = express();
 const port = 5001;
@@ -13,7 +14,15 @@ app.use(express.json());
 
 app.get("/api/videos", async (req: Request, res: Response) => {
   const videos = await VideoModel.find();
-  res.json(videos);
+
+  try {
+    const populatedVideos = await populateVideos(videos);
+
+    res.json(populatedVideos);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Circuit breaker engaged" });
+  }
 });
 
 app.post(
@@ -47,7 +56,15 @@ app.post(
 
     try {
       const savedVideo = await video.save();
-      res.json(savedVideo);
+
+      try {
+        const populatedVideo = await populateVideos([savedVideo])[0];
+
+        res.json(populatedVideo);
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "Circuit breaker engaged" });
+      }
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
