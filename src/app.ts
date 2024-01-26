@@ -1,102 +1,12 @@
 import express, { Request, Response } from "express";
-import mongoose, { Document } from "mongoose";
 import { body, validationResult } from "express-validator";
-import { EachMessagePayload, Kafka, KafkaConfig } from "kafkajs";
-import { encode, decode } from "@msgpack/msgpack";
-import { KeyLike, jwtVerify } from "jose";
-import { v4 as uuidv4 } from "uuid";
-
-interface JwtRotatedPayload {
-  jwt: string;
-}
-
-interface JwtUser {
-  id: string;
-  username: string;
-  email: string;
-  roles: string[];
-}
+import { JwtUser, decodeJWT } from "./jwt";
+import { setupMongo } from "./mongodb/connection";
+import { setupKafka } from "./kafka";
+import { VideoModel } from "./mongodb/video";
 
 const app = express();
 const port = 5001;
-
-let connectionString = process.env.MONGO_CONNECTION_STRING;
-
-if (!connectionString) {
-  connectionString =
-    "mongodb://user:pass@localhost:27017/videos?authSource=admin";
-}
-
-mongoose.connect(connectionString, {});
-
-const kafkaConfig: KafkaConfig = {
-  brokers: [process.env.KAFKA_URI],
-  sasl: {
-    mechanism: "scram-sha-256",
-    username: process.env.KAFKA_USERNAME,
-    password: process.env.KAFKA_PASSWORD,
-  },
-};
-const kafka = new Kafka(kafkaConfig);
-
-let jwtSecret: Uint8Array | null = null;
-
-const jwtConsumer = kafka.consumer({ groupId: `jwt-group-${uuidv4()}` });
-
-const onJwtRotated = async (data: JwtRotatedPayload) => {
-  console.log("Rotated JWT secret:", data.jwt);
-  jwtSecret = new TextEncoder().encode(data.jwt);
-};
-
-jwtConsumer.connect().then(() => {
-  jwtConsumer
-    .subscribe({ topic: "jwt-rotated", fromBeginning: true })
-    .then(() => {
-      jwtConsumer.run({
-        eachMessage: async ({ message }: EachMessagePayload) => {
-          const data = decode(message.value) as JwtRotatedPayload;
-          onJwtRotated(data);
-        },
-      });
-    });
-});
-
-const getBearerToken = (req) => {
-  if (
-    !req.headers.authorization ||
-    req.headers.authorization.split(" ")[0] !== "Bearer"
-  ) {
-    throw new Error("Invalid Authorization header");
-  }
-
-  return req.headers.authorization.split(" ")[1];
-};
-
-const decodeJWT = async (req) => {
-  if (!jwtSecret) {
-    throw new Error("JWT secret not ready");
-  }
-
-  const token = getBearerToken(req);
-  const { payload } = await jwtVerify(token, jwtSecret);
-
-  console.log(payload);
-  return payload as unknown as JwtUser;
-};
-
-const videoSchema = new mongoose.Schema({
-  title: { type: String, required: true, minlength: 1, maxlength: 100 },
-  description: { type: String, maxlength: 500 },
-  owner_user_id: { type: String, required: true, minlength: 1 },
-});
-
-const VideoModel = mongoose.model<Video>("Video", videoSchema);
-
-interface Video extends Document {
-  title: string;
-  description: string;
-  owner_user_id: string;
-}
 
 app.use(express.json());
 
@@ -150,6 +60,10 @@ app.get("/api/videos/version", (req: Request, res: Response) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+const setupExpress = () => {
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+};
+
+setupMongo().then(setupKafka).then(setupExpress);
