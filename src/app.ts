@@ -3,7 +3,6 @@ import { body, validationResult } from "express-validator";
 import { JwtUser, decodeJWT } from "./jwt.js";
 import { setupMongo } from "./mongodb/connection.js";
 import { setupKafka } from "./kafka.js";
-import { setupRedis } from "./redis.js";
 import { VideoModel } from "./mongodb/video.js";
 import { populateVideos } from "./populate.js";
 
