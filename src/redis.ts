@@ -4,10 +4,9 @@ import { decode, encode } from "@msgpack/msgpack";
 let client = null;
 
 export const getValues = async <T>(keys: string[]): Promise<T[]> => {
-  const result = await client.mGet(
-    commandOptions({ returnBuffers: true }),
-    keys
-  );
+  const result = await (
+    await getClient()
+  ).mGet(commandOptions({ returnBuffers: true }), keys);
 
   const unpackedValues = result
     .filter((value) => value != null)
@@ -28,17 +27,16 @@ export const setValues = async <T>(values: Record<string, T>) => {
     {}
   );
 
-  const result = await client.mSet(packedValues);
+  const result = await (await getClient()).mSet(packedValues);
   console.log("Packed values:", packedValues);
   return result;
 };
 
-export const setupRedis = async () => {
-  if (client != null) {
-    return;
-  }
-
-  client = await createClient({
-    url: process.env.REDIS_URI,
+export const getClient = async () => {
+  return await createClient({
+    url: "redis://159.69.24.54:6379",
+    socket: {
+      connectTimeout: 10000,
+    },
   }).connect();
 };

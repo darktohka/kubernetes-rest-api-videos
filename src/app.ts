@@ -84,4 +84,4 @@ const setupExpress = () => {
   });
 };
 
-setupMongo().then(setupKafka).then(setupRedis).then(setupExpress);
+setupMongo().then(setupKafka).then(setupExpress);
