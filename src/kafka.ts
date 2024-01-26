@@ -1,7 +1,7 @@
 import { EachMessagePayload, Kafka, KafkaConfig } from "kafkajs";
 import { decode } from "@msgpack/msgpack";
 import { v4 as uuidv4 } from "uuid";
-import { setJwtSecret } from "./jwt";
+import { setJwtSecret } from "./jwt.js";
 
 interface JwtRotatedPayload {
   jwt: string;

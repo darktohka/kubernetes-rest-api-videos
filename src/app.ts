@@ -1,9 +1,9 @@
 import express, { Request, Response } from "express";
 import { body, validationResult } from "express-validator";
-import { JwtUser, decodeJWT } from "./jwt";
-import { setupMongo } from "./mongodb/connection";
-import { setupKafka } from "./kafka";
-import { VideoModel } from "./mongodb/video";
+import { JwtUser, decodeJWT } from "./jwt.js";
+import { setupMongo } from "./mongodb/connection.js";
+import { setupKafka } from "./kafka.js";
+import { VideoModel } from "./mongodb/video.js";
 
 const app = express();
 const port = 5001;
