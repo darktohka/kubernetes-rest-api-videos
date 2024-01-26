@@ -110,8 +110,6 @@ export const setupKafka = () => {
 };
 
 export const requestPopulateUsers = (payload: PopulateUsersPayload) => {
-  const producer = kafka.producer();
-
   return producer.send({
     topic: "populate-users",
     messages: [{ value: Buffer.from(encode(payload)) }],
